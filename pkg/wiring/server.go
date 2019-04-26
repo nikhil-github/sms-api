@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/zpnk/go-bitly"
 	"go.uber.org/zap"
 
 	"github.com/nikhil-github/sms-api/pkg/service"
@@ -15,7 +16,7 @@ import (
 func Start(cfg *Config, logger *zap.Logger) error {
 
 	ctx := context.Background()
-	svc := service.New(cfg.TRANSMIT.Apikey, cfg.TRANSMIT.Secret, http.DefaultClient, logger, cfg.BITLY.Token)
+	svc := service.New(cfg.TRANSMIT.Apikey, cfg.TRANSMIT.Secret, http.DefaultClient, logger, bitly.New(cfg.BITLY.Token))
 	router := NewRouter(&Params{Logger: logger, Formatter: svc, Sender: svc})
 
 	errs := make(chan error)

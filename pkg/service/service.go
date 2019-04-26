@@ -54,8 +54,8 @@ type HTTPClient interface {
 }
 
 // New creates a new SenderService.
-func New(apiKey string, secret string, httpClient HTTPClient, l *zap.Logger, bitlyToken string) *SenderService {
-	return &SenderService{apiKey: apiKey, secret: secret, httpClient: httpClient, logger: l, bitlyClient: bitly.New(bitlyToken)}
+func New(apiKey string, secret string, httpClient HTTPClient, l *zap.Logger, bitlyClient *bitly.Client) *SenderService {
+	return &SenderService{apiKey: apiKey, secret: secret, httpClient: httpClient, logger: l, bitlyClient: bitlyClient}
 }
 
 // Format method validates and format the given phone number
@@ -105,6 +105,7 @@ func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string
 	data := url.Values{}
 	data.Set("message", text)
 	data.Set("to", strconv.FormatInt(phoneNumber, 10))
+
 	req, err := s.request("POST", sendSMS, data.Encode())
 	if err != nil {
 		return err

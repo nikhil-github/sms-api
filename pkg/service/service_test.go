@@ -3,35 +3,34 @@ package service_test
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"github.com/zpnk/go-bitly"
 	"go.uber.org/zap"
 
 	"github.com/nikhil-github/sms-api/pkg/service"
 )
 
 func TestFormat(t *testing.T) {
-	//ctx := context.Background()
-	//authRequest, err := http.NewRequest("POST", "https://oauth.brightcove.com/v4/access_token", bytes.NewReader([]byte("grant_type=client_credentials")))
-	//require.NoError(t, err, "Unable to create auth request")
-	//authRequest.Header.Add("Content-type", "application/x-www-form-urlencoded")
-	//authRequest.Header.Add("Authorization", "Basic Y2xpZW50SUQ6Y2xpZW50S2V5")
-	//
-	//authRequest1, err := http.NewRequest("POST", "https://oauth.brightcove.com/v4/access_token", bytes.NewReader([]byte("grant_type=client_credentials")))
-	//require.NoError(t, err, "Unable to create auth request1")
-	//authRequest1.Header.Add("Content-type", "application/x-www-form-urlencoded")
-	//authRequest1.Header.Add("Authorization", "Basic Y2xpZW50SUQ6Y2xpZW50S2V5LXdyb25n")
-
 	type args struct {
-		ID     string
-		Secret string
+		Number string
 	}
 	type fields struct {
-		// MockExpectations func(m *httpClient)
+		MockOperations func(m *httpClient)
 	}
 	type want struct {
-		Err    string
-		Result string
+		Err             string
+		FormattedNumber int64
+		Valid           bool
 	}
 	testTable := []struct {
 		Name   string
@@ -40,18 +39,170 @@ func TestFormat(t *testing.T) {
 		Want   want
 	}{
 		{
-			Name: "Success",
-			Want: want{Result: "test-token"},
+			Name: "Success : right format",
+			Args: args{Number: "1234567890"},
+			Fields: fields{MockOperations: func(c *httpClient) {
+				data := url.Values{}
+				data.Set("msisdn", "1234567890")
+				data.Set("countrycode", "AU")
+				req, err := http.NewRequest("POST", "https://api.transmitsms.com/format-number.json", strings.NewReader(data.Encode()))
+				if err != nil {
+					panic(err)
+				}
+				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"number":{"international":611234567890,"isValid":true},"error" : {"code":"SUCCESS","description":" "}}`)), nil).Once()
+			}},
+			Want: want{FormattedNumber: int64(611234567890), Valid: true},
+		},
+		{
+			Name: "Failure : wrong format",
+			Args: args{Number: "12345678901"},
+			Fields: fields{MockOperations: func(c *httpClient) {
+				data := url.Values{}
+				data.Set("msisdn", "12345678901")
+				data.Set("countrycode", "AU")
+				req, err := http.NewRequest("POST", "https://api.transmitsms.com/format-number.json", strings.NewReader(data.Encode()))
+				if err != nil {
+					panic(err)
+				}
+				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"number":{"international":6112345678901,"isValid":false},"error" : {"code":"SUCCESS","description":"OK"}}`)), nil).Once()
+			}},
+			Want: want{FormattedNumber: int64(0), Valid: false},
+		},
+		{
+			Name: "Error",
+			Args: args{Number: "12345678901"},
+			Fields: fields{MockOperations: func(c *httpClient) {
+				data := url.Values{}
+				data.Set("msisdn", "12345678901")
+				data.Set("countrycode", "AU")
+				req, err := http.NewRequest("POST", "https://api.transmitsms.com/format-number.json", strings.NewReader(data.Encode()))
+				if err != nil {
+					panic(err)
+				}
+				c.OnDo(req).Return(mockResponse(http.StatusBadRequest, []byte(`{}`)), errors.New("failed")).Once()
+			}},
+			Want: want{Err: "failed to format number: failed"},
 		},
 	}
 	for _, tt := range testTable {
 		t.Run(tt.Name, func(t *testing.T) {
-			s := service.New("76eaa9a89c1298566e1ce03afd4feec7", "test", http.DefaultClient, zap.NewNop(), "e82183e57166afb3688d4dd962b98937381d396b")
-			s.Send(context.Background(), 405990558, "hello http://www.google.com")
-			//a, b, c := s.Format(context.Background(), "405990558")
-			//fmt.Println(a)
-			//fmt.Println(b)
-			//fmt.Println(c)
+			var client httpClient
+			tt.Fields.MockOperations(&client)
+			s := service.New("key", "secret", &client, zap.NewNop(), bitly.New("dummy"))
+			result, valid, err := s.Format(context.Background(), tt.Args.Number)
+			client.AssertExpectations(t)
+			if tt.Want.Err != "" {
+				assert.EqualError(t, err, tt.Want.Err, "error message")
+				return
+			}
+			require.NoError(t, err, "error")
+			assert.Equal(t, tt.Want.FormattedNumber, result, "result")
+			assert.Equal(t, tt.Want.Valid, valid, "valid")
+
 		})
 	}
+}
+
+func TestSend(t *testing.T) {
+	type args struct {
+		Number int64
+		Text   string
+	}
+	type fields struct {
+		MockOperations func(m *httpClient, b *mockBitly)
+	}
+	type want struct {
+		Err string
+	}
+	testTable := []struct {
+		Name   string
+		Args   args
+		Fields fields
+		Want   want
+	}{
+		{
+			Name: "Success : send sms",
+			Args: args{Number: int64(1234567890), Text: "text"},
+			Fields: fields{MockOperations: func(c *httpClient, b *mockBitly) {
+				data := url.Values{}
+				data.Set("message", "text")
+				data.Set("to", strconv.FormatInt(int64(1234567890), 10))
+				req, err := http.NewRequest("POST", "https://api.transmitsms.com/send-sms.json", strings.NewReader(data.Encode()))
+				if err != nil {
+					panic(err)
+				}
+				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"error":{"code":"SUCCESS","description":"OK"}}`)), nil).Once()
+				b.On("Shorten").Return(bitly.Link{URL: "http://bit.ly/xyz"})
+			}},
+		},
+		{
+			Name: "Error : send sms",
+			Args: args{Number: int64(1234567890), Text: "text-wrong"},
+			Fields: fields{MockOperations: func(c *httpClient, b *mockBitly) {
+				data := url.Values{}
+				data.Set("message", "text-wrong")
+				data.Set("to", strconv.FormatInt(int64(1234567890), 10))
+				req, err := http.NewRequest("POST", "https://api.transmitsms.com/send-sms.json", strings.NewReader(data.Encode()))
+				if err != nil {
+					panic(err)
+				}
+				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"error":{"code":"FIELD_INVALID","description":"is not a valid number."}}`)), errors.New("fail")).Once()
+				b.On("Shorten").Return(bitly.Link{URL: "http://bit.ly/xyz"})
+			}},
+			Want: want{Err: "failed to send sms: fail"},
+		}}
+	for _, tt := range testTable {
+		t.Run(tt.Name, func(t *testing.T) {
+			var client httpClient
+			var m mockBitly
+			tt.Fields.MockOperations(&client, &m)
+			s := service.New("key", "secret", &client, zap.NewNop(), bitly.New("dummy"))
+			err := s.Send(context.Background(), tt.Args.Number, tt.Args.Text)
+			client.AssertExpectations(t)
+			if tt.Want.Err != "" {
+				assert.EqualError(t, err, tt.Want.Err, "error message")
+				return
+			}
+			require.NoError(t, err, "error")
+		})
+	}
+}
+
+type httpClient struct {
+	mock.Mock
+}
+
+func (m *httpClient) Do(req *http.Request) (response *http.Response, error error) {
+	args := m.Called(req)
+	return args.Get(0).(*http.Response), args.Error(1)
+}
+
+func mockResponse(statusCode int, body []byte) *http.Response {
+	response := httptest.NewRecorder()
+	response.WriteHeader(statusCode)
+	response.Write(body)
+	return response.Result()
+}
+
+func (m *httpClient) OnDo(expected *http.Request) *mock.Call {
+	return m.On("Do", mock.MatchedBy(func(request *http.Request) bool {
+		if expected.Method != request.Method ||
+			expected.URL.String() != request.URL.String() {
+			return false
+		}
+		if !reflect.DeepEqual(expected.Body, request.Body) {
+			return false
+		}
+		return true
+	}))
+}
+
+type mockBitly struct {
+	mock.Mock
+	*bitly.Client
+}
+
+func (m *mockBitly) Shorten(longURL string) (bitly.Link, error) {
+	args := m.Called(longURL)
+	return args.Get(0).(bitly.Link), args.Error(1)
 }

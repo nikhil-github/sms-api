@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Message represent
+// Message represent payload.
 type Message struct {
 	PhoneNumber string   `json:"phone_number" `
 	Texts       []string `json:"texts"`
@@ -60,7 +60,7 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 			return
 		}
 		if !valid {
-			responseBadRequest(w, enc, "invalid number")
+			responseBadRequest(w, enc, "invalid phone number")
 			return
 		}
 
