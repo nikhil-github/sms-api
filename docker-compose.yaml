@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  app:
+    container_name: sms-api
+    build: .
+    env_file:
+      - .env.docker
+    ports:
+    - 3000:3000

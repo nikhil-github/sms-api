@@ -1,0 +1,7 @@
+#ignore ide files
+/.idea/
+/sms-api
+/vendor
+/_vendor-
+
+.DS_Store
