@@ -16,7 +16,7 @@ type Message struct {
 
 // Result represent status of sms send request.
 type Result struct {
-	Status map[int]string `json:status`
+	Status map[int]string `json:"status"`
 }
 
 // ErrorMsg represent error msg.
