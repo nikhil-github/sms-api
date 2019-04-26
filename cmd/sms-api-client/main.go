@@ -2,17 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 const (
-	healthURL            = "http://localhost:3000/health"
-	tripsURLbyPickUpdate = "http://localhost:3000/trips/v1/medallion/67EB082BFFE72095EAF18488BEA96050/pickupdate/2013-12-31?bypasscache=true"
-	tripsURLbyMedallions = "http://localhost:3000/trips/v1/medallions/67EB082BFFE72095EAF18488BEA96050,D7D598CD99978BD012A87A76A7C891B7?bypasscache=true"
-	clearCacheURL        = "http://localhost:3000/trips/v1/cache/contents"
+	sendSMSURL = "http://localhost:3000/api/v1/sms/send"
 )
 
 // Results represents all output.
@@ -31,78 +29,21 @@ func main() {
 	var netClient = &http.Client{
 		Timeout: time.Second * 5,
 	}
-	callHealthCheck(ctx, netClient)
-	callTripServiceWithPickUpDate(ctx, netClient)
-	callTripServiceWithMedallions(ctx, netClient)
-	callClearCacheService(ctx, netClient)
+	sendSMS(ctx, netClient)
 }
 
-func callHealthCheck(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("GET", healthURL, nil)
+func sendSMS(ctx context.Context, client *http.Client) {
+	r, err := http.NewRequest("POST", sendSMSURL, strings.NewReader(`{"phone_number":"0405990558","texts":["text1"]}`))
 	if err != nil {
-		log.Fatalf("health check request creation failed")
+		log.Fatalf("request creation failed")
 	}
 	res, err := client.Do(r.WithContext(ctx))
 	if err != nil {
-		log.Fatalf("health check failed, please check the health of service")
+		fmt.Println(err)
+		log.Fatalf("service call failure %s", err.Error())
 	}
 	if res.StatusCode != http.StatusOK {
-		log.Fatalf("health check failed healthRes.StatusCode %d", res.StatusCode)
+		log.Fatalf("failed to send sms http status code %d", res.StatusCode)
 	}
-	log.Println("health check passed!!")
-}
-
-func callTripServiceWithPickUpDate(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("GET", tripsURLbyPickUpdate, nil)
-	if err != nil {
-		log.Fatalf("trip svc request creation failed")
-	}
-	res, err := client.Do(r.WithContext(ctx))
-	if err != nil {
-		log.Fatalf("trip service failed")
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		log.Fatalf("failure with status %d", res.StatusCode)
-	}
-	var result Result
-	if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
-		log.Fatalf("failed to decode the response")
-	}
-	log.Printf("response=> %#v\n", result)
-}
-
-func callTripServiceWithMedallions(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("GET", tripsURLbyMedallions, nil)
-	if err != nil {
-		log.Fatalf("trip svc request creation failed")
-	}
-	res, err := client.Do(r.WithContext(ctx))
-	if err != nil {
-		log.Fatalf("trip service failed")
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		log.Fatalf("failure with status %d", res.StatusCode)
-	}
-	var result []Result
-	if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
-		log.Fatalf("failed to decode the response")
-	}
-	log.Printf("response=> %#v\n", result)
-}
-
-func callClearCacheService(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("DELETE", clearCacheURL, nil)
-	if err != nil {
-		log.Fatalf("clear cache request creation failed")
-	}
-	res, err := client.Do(r.WithContext(ctx))
-	if err != nil {
-		log.Fatalf("clear cache failed")
-	}
-	if res.StatusCode != http.StatusOK {
-		log.Fatalf("clear cache failed %d", res.StatusCode)
-	}
-	log.Printf("Successfully cleared cache entries")
+	log.Println("send sms successful!!")
 }

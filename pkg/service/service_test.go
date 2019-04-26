@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/zpnk/go-bitly"
 	"go.uber.org/zap"
 
 	"github.com/nikhil-github/sms-api/pkg/service"
@@ -88,7 +87,7 @@ func TestFormat(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			var client httpClient
 			tt.Fields.MockOperations(&client)
-			s := service.New("key", "secret", &client, zap.NewNop(), bitly.New("dummy"))
+			s := service.New("key", "secret", &client, zap.NewNop(), nil)
 			result, valid, err := s.Format(context.Background(), tt.Args.Number)
 			client.AssertExpectations(t)
 			if tt.Want.Err != "" {
@@ -122,17 +121,17 @@ func TestSend(t *testing.T) {
 	}{
 		{
 			Name: "Success : send sms",
-			Args: args{Number: int64(1234567890), Text: "text"},
+			Args: args{Number: int64(1234567890), Text: "text http://www.google.com"},
 			Fields: fields{MockOperations: func(c *httpClient, b *mockBitly) {
 				data := url.Values{}
-				data.Set("message", "text")
+				data.Set("message", "text http://bit.ly/xyz")
 				data.Set("to", strconv.FormatInt(int64(1234567890), 10))
 				req, err := http.NewRequest("POST", "https://api.transmitsms.com/send-sms.json", strings.NewReader(data.Encode()))
 				if err != nil {
 					panic(err)
 				}
 				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"error":{"code":"SUCCESS","description":"OK"}}`)), nil).Once()
-				b.On("Shorten").Return(bitly.Link{URL: "http://bit.ly/xyz"})
+				b.On("ShortURL", "http://www.google.com").Return("http://bit.ly/xyz", nil)
 			}},
 		},
 		{
@@ -147,7 +146,6 @@ func TestSend(t *testing.T) {
 					panic(err)
 				}
 				c.OnDo(req).Return(mockResponse(http.StatusOK, []byte(`{"error":{"code":"FIELD_INVALID","description":"is not a valid number."}}`)), errors.New("fail")).Once()
-				b.On("Shorten").Return(bitly.Link{URL: "http://bit.ly/xyz"})
 			}},
 			Want: want{Err: "failed to send sms: fail"},
 		}}
@@ -156,7 +154,7 @@ func TestSend(t *testing.T) {
 			var client httpClient
 			var m mockBitly
 			tt.Fields.MockOperations(&client, &m)
-			s := service.New("key", "secret", &client, zap.NewNop(), bitly.New("dummy"))
+			s := service.New("key", "secret", &client, zap.NewNop(), &m)
 			err := s.Send(context.Background(), tt.Args.Number, tt.Args.Text)
 			client.AssertExpectations(t)
 			if tt.Want.Err != "" {
@@ -199,10 +197,9 @@ func (m *httpClient) OnDo(expected *http.Request) *mock.Call {
 
 type mockBitly struct {
 	mock.Mock
-	*bitly.Client
 }
 
-func (m *mockBitly) Shorten(longURL string) (bitly.Link, error) {
+func (m *mockBitly) ShortURL(longURL string) (string, error) {
 	args := m.Called(longURL)
-	return args.Get(0).(bitly.Link), args.Error(1)
+	return args.Get(0).(string), args.Error(1)
 }

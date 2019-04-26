@@ -10,42 +10,17 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/zpnk/go-bitly"
 	"go.uber.org/zap"
 	"mvdan.cc/xurls"
 )
 
-const (
-	baseURL      = "https://api.transmitsms.com"
-	sendSMS      = "/send-sms.json"
-	formatNumber = "/format-number.json"
-)
-
+// SenderService wraps dependencies to send sms.
 type SenderService struct {
-	apiKey      string
-	bitlyClient *bitly.Client
-	httpClient  HTTPClient
-	logger      *zap.Logger
-	secret      string
-}
-
-type Format struct {
-	Number Number `json:"number"`
-	Error  Error  `json:"error"`
-}
-
-type Number struct {
-	International int64 `json:"international"`
-	IsValid       bool  `json:"isValid"`
-}
-
-type Response struct {
-	Error Error `json:"error"`
-}
-
-type Error struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
+	apiKey     string
+	bitly      Shorter
+	httpClient HTTPClient
+	logger     *zap.Logger
+	secret     string
 }
 
 // HTTPClient an interface for HTTP requests.
@@ -53,9 +28,14 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// Shorter provide method for shorten URL.
+type Shorter interface {
+	ShortURL(longURL string) (string, error)
+}
+
 // New creates a new SenderService.
-func New(apiKey string, secret string, httpClient HTTPClient, l *zap.Logger, bitlyClient *bitly.Client) *SenderService {
-	return &SenderService{apiKey: apiKey, secret: secret, httpClient: httpClient, logger: l, bitlyClient: bitlyClient}
+func New(apiKey string, secret string, httpClient HTTPClient, l *zap.Logger, bitly Shorter) *SenderService {
+	return &SenderService{apiKey: apiKey, secret: secret, httpClient: httpClient, logger: l, bitly: bitly}
 }
 
 // Format method validates and format the given phone number
@@ -134,16 +114,15 @@ func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string
 
 // replaceLinks find links in text and replace them with bitly links
 // mvdan.cc/xurls find all links in a string
-// github.com/zpnk/go-bitly go bitly client
 func (s *SenderService) replaceLinks(text string) (string, error) {
 	links := xurls.Strict().FindAllString(text, -1)
 	for _, link := range links {
-		short, err := s.bitlyClient.Links.Shorten(link)
+		short, err := s.bitly.ShortURL(link)
 		if err != nil {
 			s.logger.Error("shorten-link-error", zap.Error(err))
 			return "", err
 		}
-		text = strings.Replace(text, link, short.URL, -1)
+		text = strings.Replace(text, link, short, -1)
 	}
 	fmt.Println("replaced links", text)
 	return text, nil
