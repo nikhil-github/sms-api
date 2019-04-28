@@ -16,7 +16,7 @@ type Message struct {
 
 // Result represent status of sms send request.
 type Result struct {
-	Status map[int]string `json:"status"`
+	Status []string `json:"status"`
 }
 
 // ErrorMsg represent error msg.
@@ -65,17 +65,17 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 			return
 		}
 
-		status := make(map[int]string, 3)
-		for i, text := range m.Texts {
-			if text  == "" {
+		var status []string
+		for _, text := range m.Texts {
+			if text == "" || len(text) == 0 {
 				continue
 			}
 			err := sender.Send(ctx, number, text)
 			if err != nil {
-				status[i] = "failed"
+				status = append(status, "failed")
 				logger.Error("Unable to send sms", zap.Error(err))
 			} else {
-				status[i] = "success"
+				status = append(status, "success")
 			}
 		}
 		responseOK(w, enc, status)
@@ -108,7 +108,7 @@ func validateLength(t string) bool {
 	return true
 }
 
-func responseOK(w http.ResponseWriter, encoder *json.Encoder, response map[int]string) {
+func responseOK(w http.ResponseWriter, encoder *json.Encoder, response []string) {
 	w.WriteHeader(http.StatusOK)
 	encoder.Encode(NewStatus(response))
 }
@@ -125,7 +125,7 @@ func serverError(w http.ResponseWriter, encoder *json.Encoder, response string) 
 }
 
 // NewStatus new error message.
-func NewStatus(status map[int]string) *Result {
+func NewStatus(status []string) *Result {
 	return &Result{
 		Status: status,
 	}

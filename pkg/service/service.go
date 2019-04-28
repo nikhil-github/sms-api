@@ -77,7 +77,6 @@ func (s *SenderService) Format(ctx context.Context, phoneNumber string) (int64, 
 // links are searched and replaced with short bitly links
 func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string) error {
 
-	return nil
 	text, err := s.replaceLinks(text)
 	if err != nil {
 		return err

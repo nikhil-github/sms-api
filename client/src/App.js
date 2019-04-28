@@ -6,7 +6,7 @@ class App extends Component {
     constructor() {
         super();
         this.state = {
-            result: {},
+            result: [],
             error: ''
         };
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -15,7 +15,7 @@ class App extends Component {
     handleSubmit(event) {
         event.preventDefault();
         const data = new FormData(event.target);
-        this.setState({ result: {}, error: '' });
+        this.setState({ result: [], error: '' });
 
         if (data.get('number').length == 0) {
             this.setState({ error: 'Phone number cannot be empty' });
@@ -30,7 +30,7 @@ class App extends Component {
         const url = 'http://localhost:3001/api/v1/sms/send';
         const payload = {
             phone_number: data.get('number'),
-            texts: [data.get('text1'), data.get('text2'), data.get('text2')]
+            texts: [data.get('text1'), data.get('text2'), data.get('text3')]
         };
 
         fetch(url, {
@@ -42,7 +42,7 @@ class App extends Component {
         }).then(res => res.json())
             .then(data => {
                 if (data.message) {
-                    this.setState({ error: data.message, result: {} })
+                    this.setState({ error: data.message, result: [] })
                 } else{
                     this.setState({ error: data.message, result: data.status})
                 }
@@ -55,15 +55,16 @@ class App extends Component {
 
     render() {
         const { error, result } = this.state;
-        const results = Object.entries(result).map(function ([key, value]) {
-            return <li><b>Text {key} sent status: {value}</b></li>
-        });
         return (
             <form onSubmit={this.handleSubmit}>
                 <h1> SMS Sender </h1>
                 <h2> Enter number and up to 3 texts to send! </h2>
                 <p style={{ color: 'red' }}>{error}</p>
-                <ul style={{ color: 'green' }}>{results}</ul>
+                <ul>
+                    {result.map((value, index) => {
+                        return <li key={index}>Text {index} status: {value}</li>
+                    })}
+                </ul>
                 <label htmlFor="number">Phone number</label>
                 <input id="number" name="number" type="text" />
                 <label htmlFor="text1">Text 1</label>

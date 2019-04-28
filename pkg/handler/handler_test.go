@@ -62,7 +62,7 @@ func TestSend(t *testing.T) {
 				s.OnSend(int64(88787878), "text1").Return(errors.New("error"))
 				s.OnSend(int64(88787878), "text2").Return(nil)
 			}},
-			Want: want{Status: http.StatusOK, Body: `{"status": {"0": "failed","1": "success"}}`},
+			Want: want{Status: http.StatusOK, Body: `{"status": [ "failed","success"]}`},
 		},
 		{
 			Name: "Success - send sms",
@@ -71,7 +71,7 @@ func TestSend(t *testing.T) {
 				m.OnFormat("wrong-number").Return(int64(5555555), true, nil)
 				s.OnSend(int64(5555555), "text1").Return(nil)
 			}},
-			Want: want{Status: http.StatusOK, Body: `{"status": {"0": "success"}}`},
+			Want: want{Status: http.StatusOK, Body: `{"status": [ "success"]}`},
 		},
 	}
 	for _, tt := range testTable {
