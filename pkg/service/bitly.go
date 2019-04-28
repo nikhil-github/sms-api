@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Bitly wraps bitly client dependencies.
 type Bitly struct {
 	client *bitly.Client
 	logger *zap.Logger

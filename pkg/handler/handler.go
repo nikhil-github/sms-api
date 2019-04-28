@@ -34,6 +34,7 @@ type Formatter interface {
 	Format(ctx context.Context, phoneNumber string) (int64, bool, error)
 }
 
+// Send validates the input and call service to send sms.
 func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -89,7 +90,7 @@ func validate(m Message) string {
 	if len(m.Texts) > 3 {
 		return "max allowed text count is 3"
 	}
-	for _,t := range m.Texts {
+	for _, t := range m.Texts {
 		if !validateLength(t) {
 			return "max allowed text length is 160"
 		}
@@ -120,7 +121,7 @@ func serverError(w http.ResponseWriter, encoder *json.Encoder, response string) 
 	encoder.Encode(NewErrorMsg(response))
 }
 
-// NewErrorMsg new error message.
+// NewStatus new error message.
 func NewStatus(status map[int]string) *Result {
 	return &Result{
 		Status: status,
