@@ -2,6 +2,8 @@
 
 This code is 100% in compliance with golint, go_vet and gofmt. Check this for more details: [![Go Report Card](https://goreportcard.com/badge/github.com/nikhil-github/sms-app)]( https://goreportcard.com/report/github.com/nikhil-github/sms-app ) [![Build](https://travis-ci.org/nikhil-github/sms-app.svg?branch=master)](https://travis-ci.org/nikhil-github/sms-app)
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/nikhil-github/sms-app)](https://goreportcard.com/report/github.com/nikhil-github/sms-app)
+https://goreportcard.com/badge/github.com/nikhil-github/sms-app
 
 ## Introduction:
 
@@ -53,15 +55,17 @@ Parent project folder have been used for the golang API and client folder for th
 
 ### Run Locally
 
-server -> `make run`
-client -> `make run-client`
+- server -> `make run`
+- client -> `make run-client`
+
+http://localhost:3000 web form
 
 ### Run Docker
 
-server -> `make run-docker`
-client -> `make run-client-docker`
+- server -> `make run-docker`
+- client -> `make run-client-docker`
 
-http://localhost:3000 will bring up form to test the app.
+http://localhost:3000 web form
 
 
 ### Make targets
@@ -73,13 +77,10 @@ http://localhost:3000 will bring up form to test the app.
 
 ### API client
 
-Simple client is added to the project that consumes the rest endpoints.
+Simple client is added to the project that consumes the rest endpoint.
 To run the client
 
-```
-    go run cmd/sms-app-client/main.go
-
-```
+```go run cmd/sms-app-client/main.go```
 ### Assumptions:
 - API allows maximum of 160 characters per text.
 - Secrets/Configs are supplied as env variables.
