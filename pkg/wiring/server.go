@@ -34,7 +34,7 @@ func Start(cfg *Config, logger *zap.Logger) error {
 
 func serveHTTP(port int, logger *zap.Logger, h http.Handler, errs chan error) {
 	addr := fmt.Sprintf(":%d", port)
-	s := &http.Server{Addr: addr, Handler: h}
+	s := &http.Server{Addr: addr, Handler: disableCors(h)}
 
 	go func() {
 		logger.Info("Listening for requests .....", zap.String("http.address", addr))
@@ -42,4 +42,18 @@ func serveHTTP(port int, logger *zap.Logger, h http.Handler, errs chan error) {
 			errs <- errors.Wrapf(err, "error serving HTTP on address %s", addr)
 		}
 	}()
+}
+
+func disableCors(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, Content-Length, Accept-Encoding")
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Max-Age", "86400")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }

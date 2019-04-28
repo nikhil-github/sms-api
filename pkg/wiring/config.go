@@ -3,7 +3,7 @@ package wiring
 // Config wraps app configs.
 type Config struct {
 	HTTP struct {
-		Port int `envconfig:"default=3000"`
+		Port int `envconfig:"default=3001"`
 	}
 	LOG struct {
 		Level string

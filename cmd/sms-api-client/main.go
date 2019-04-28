@@ -10,19 +10,8 @@ import (
 )
 
 const (
-	sendSMSURL = "http://localhost:3000/api/v1/sms/send"
+	sendSMSURL = "http://localhost:3001/api/v1/sms/send"
 )
-
-// Results represents all output.
-type Results struct {
-	Res []Result
-}
-
-// Result represents output.
-type Result struct {
-	Medallion string `json:"medallion"`
-	Trips     int    `json:"trips"`
-}
 
 func main() {
 	ctx := context.Background()
@@ -33,7 +22,7 @@ func main() {
 }
 
 func sendSMS(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("POST", sendSMSURL, strings.NewReader(`{"phone_number":"0405990558","texts":["text1"]}`))
+	r, err := http.NewRequest("POST", sendSMSURL, strings.NewReader(`{"phone_number":"01405990558","texts":["text1"]}`))
 	if err != nil {
 		log.Fatalf("request creation failed")
 	}

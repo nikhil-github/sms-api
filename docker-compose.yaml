@@ -5,6 +5,6 @@ services:
     container_name: sms-api
     build: .
     env_file:
-      - .env.docker
+      - .env
     ports:
-    - 3000:3000
+    - 3001:3001
