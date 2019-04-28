@@ -1,6 +1,6 @@
 #ignore ide files
 /.idea/
-/sms-api
+/sms-app
 /vendor
 /_vendor-
 

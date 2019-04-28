@@ -1,5 +1,5 @@
 SHELL                :=/bin/bash
-REPO_NAME            := sms-api
+REPO_NAME            := sms-app
 GIT_HASH             := $$(git rev-parse --short HEAD)
 REPO_VERSION         := 1.0
 GOBUILD_ARGS         := -ldflags "-s -X main.Version=$(REPO_VERSION) -X main.gitCommit=$(GIT_HASH)"

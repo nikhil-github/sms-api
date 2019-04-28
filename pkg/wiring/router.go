@@ -4,7 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/nikhil-github/sms-api/pkg/handler"
+	"github.com/nikhil-github/sms-app/pkg/handler"
 )
 
 // Params represent router params.

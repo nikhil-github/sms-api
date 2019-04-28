@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nikhil-github/sms-api/pkg/wiring"
+	"github.com/nikhil-github/sms-app/pkg/wiring"
 )
 
 func main() {

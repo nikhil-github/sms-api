@@ -1,6 +1,6 @@
 FROM golang:1.9-alpine3.7 AS build
 
-WORKDIR /go/src/github.com/nikhil-github/sms-api
+WORKDIR /go/src/github.com/nikhil-github/sms-app
 
 RUN apk add --no-cache \
             bash~=4.4 \
@@ -19,6 +19,6 @@ FROM alpine AS release
 
 RUN apk add --no-cache ca-certificates
 
-COPY --from=build /go/src/github.com/nikhil-github/sms-api/sms-api /go/bin/sms-api
+COPY --from=build /go/src/github.com/nikhil-github/sms-app/sms-app /go/bin/sms-app
 
-CMD ["/go/bin/sms-api"]
+CMD ["/go/bin/sms-app"]

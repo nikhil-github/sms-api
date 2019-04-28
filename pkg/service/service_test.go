@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/nikhil-github/sms-api/pkg/service"
+	"github.com/nikhil-github/sms-app/pkg/service"
 )
 
 func TestFormat(t *testing.T) {

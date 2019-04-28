@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
-	"github.com/nikhil-github/sms-api/pkg/wiring"
+	"github.com/nikhil-github/sms-app/pkg/wiring"
 )
 
 func TestSend(t *testing.T) {

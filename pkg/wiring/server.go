@@ -10,7 +10,7 @@ import (
 	"github.com/zpnk/go-bitly"
 	"go.uber.org/zap"
 
-	"github.com/nikhil-github/sms-api/pkg/service"
+	"github.com/nikhil-github/sms-app/pkg/service"
 )
 
 // Start wires the services and start the app.

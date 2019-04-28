@@ -2,7 +2,7 @@ version: "3"
 
 services:
   app:
-    container_name: sms-api
+    container_name: sms-app
     build: .
     env_file:
       - .env
