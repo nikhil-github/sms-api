@@ -75,6 +75,7 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 			}
 		}
 		responseOK(w, enc, status)
+		return
 	}
 }
 
@@ -88,7 +89,19 @@ func validate(m Message) string {
 	if len(m.Texts) > 3 {
 		return "max allowed text count is 3"
 	}
+	for _,t := range m.Texts {
+		if !validateLength(t) {
+			return "max allowed text length is 160"
+		}
+	}
 	return ""
+}
+
+func validateLength(t string) bool {
+	if len(t) > 160 {
+		return false
+	}
+	return true
 }
 
 func responseOK(w http.ResponseWriter, encoder *json.Encoder, response map[int]string) {
