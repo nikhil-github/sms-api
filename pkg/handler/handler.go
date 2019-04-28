@@ -67,6 +67,9 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 
 		status := make(map[int]string, 3)
 		for i, text := range m.Texts {
+			if text  == "" {
+				continue
+			}
 			err := sender.Send(ctx, number, text)
 			if err != nil {
 				status[i] = "failed"

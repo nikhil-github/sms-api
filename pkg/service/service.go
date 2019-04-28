@@ -55,22 +55,21 @@ func (s *SenderService) Format(ctx context.Context, phoneNumber string) (int64, 
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		s.logger.Error("format number error", zap.Int("status code", res.StatusCode))
-		return 0, false, fmt.Errorf("error")
+		s.logger.Error("Format number error", zap.Int("status code", res.StatusCode))
+		return 0, false, nil
 	}
 
 	var response Format
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		s.logger.Error("error", zap.Error(err))
-		fmt.Println(err)
 		return 0, false, fmt.Errorf("error decoding")
 	}
 	if response.Number.IsValid {
 		return response.Number.International, true, nil
 	}
-	s.logger.Error("error code", zap.String("code", response.Error.Code))
-	s.logger.Error("error description", zap.String("description", response.Error.Description))
-	return 0, false, err
+	s.logger.Error("Error code", zap.String("code", response.Error.Code))
+	s.logger.Error("Error description", zap.String("description", response.Error.Description))
+	return 0, false, nil
 
 }
 
@@ -78,6 +77,7 @@ func (s *SenderService) Format(ctx context.Context, phoneNumber string) (int64, 
 // links are searched and replaced with short bitly links
 func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string) error {
 
+	return nil
 	text, err := s.replaceLinks(text)
 	if err != nil {
 		return err
@@ -106,9 +106,8 @@ func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string
 		return err
 	}
 
-	s.logger.Error("error code", zap.String("code", response.Error.Code))
-	s.logger.Error("error description", zap.String("description", response.Error.Description))
-
+	s.logger.Error("Error code", zap.String("code", response.Error.Code))
+	s.logger.Error("Error description", zap.String("description", response.Error.Description))
 	return nil
 }
 

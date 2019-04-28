@@ -1,14 +1,11 @@
 # sms-app
 
-This code is 100% in compliance with golint, go_vet and gofmt. Check this for more details: [![Go Report Card](https://goreportcard.com/badge/github.com/nikhil-github/sms-app)](https://goreportcard.com/report/github.com/nikhil-github/sms-app) [![Build](https://travis-ci.org/nikhil-github/sms-app.svg?branch=master)](https://travis-ci.org/nikhil-github/sms-app)
+This code is 100% in compliance with golint, go_vet and gofmt. Check this for more details: [![Go Report Card](https://goreportcard.com/badge/github.com/nikhil-github/sms-app)]( https://goreportcard.com/report/github.com/nikhil-github/sms-app ) [![Build](https://travis-ci.org/nikhil-github/sms-app.svg?branch=master)](https://travis-ci.org/nikhil-github/sms-app)
 
 
 ## Introduction:
 
 A simple app built in golang that serves rest endpoint to send sms. Repo include a web form built in react for user to interact with the app.
-
-Project has been primarily focused on building golang api and a web form's purpose is to provide a user interface for testing.
-
 
 API provides a single endpoint to send sms
 
@@ -24,7 +21,7 @@ Payload
 ```
 Success 
 
-```{status : {"0" : "success" ,"1" : "failure , "2" : "success}}```
+```{status : {"0" : "success" ,"1" : "failure" , "2" : "success}}```
 
 Failure
 

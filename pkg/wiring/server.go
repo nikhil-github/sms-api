@@ -13,7 +13,7 @@ import (
 	"github.com/nikhil-github/sms-app/pkg/service"
 )
 
-// Start wires the services and start the app.
+// Start wires the dependencies and start the app.
 func Start(cfg *Config, logger *zap.Logger) error {
 
 	ctx := context.Background()
