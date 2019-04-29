@@ -22,7 +22,7 @@ func main() {
 }
 
 func sendSMS(ctx context.Context, client *http.Client) {
-	r, err := http.NewRequest("POST", sendSMSURL, strings.NewReader(`{"phone_number":"01405990558","texts":["text1"]}`))
+	r, err := http.NewRequest("POST", sendSMSURL, strings.NewReader(`{"phone_number":"011010101011","texts":["text1"]}`))
 	if err != nil {
 		log.Fatalf("request creation failed")
 	}

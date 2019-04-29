@@ -3,12 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"go.uber.org/zap"
 )
 
-// Message represent payload.
+// Message represent input payload.
 type Message struct {
 	PhoneNumber string   `json:"phone_number" `
 	Texts       []string `json:"texts"`
@@ -34,7 +35,8 @@ type Formatter interface {
 	Format(ctx context.Context, phoneNumber string) (int64, bool, error)
 }
 
-// Send validates the input and call service to send sms.
+// Send handles incoming request to send sms.
+// POST /api/v1/sms/send
 func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,8 +51,8 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 			return
 		}
 
-		if msg := validate(m); msg != "" {
-			responseBadRequest(w, enc, msg)
+		if err := validate(m); err != nil {
+			responseBadRequest(w, enc, err.Error())
 			return
 		}
 
@@ -67,13 +69,13 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 
 		var status []string
 		for _, text := range m.Texts {
-			if text == "" || len(text) == 0 {
+			if len(text) == 0 {
 				continue
 			}
 			err := sender.Send(ctx, number, text)
 			if err != nil {
 				status = append(status, "failed")
-				logger.Error("Unable to send sms", zap.Error(err))
+				logger.Error("Unable to send sms", zap.String("text", text), zap.Error(err))
 			} else {
 				status = append(status, "success")
 			}
@@ -83,29 +85,22 @@ func Send(logger *zap.Logger, sender Sender, formatter Formatter) http.HandlerFu
 	}
 }
 
-func validate(m Message) string {
+func validate(m Message) error {
 	if m.PhoneNumber == "" {
-		return "phone number missing"
+		return errors.New("phone number missing")
 	}
 	if len(m.Texts) == 0 {
-		return "texts missing"
+		return errors.New("texts missing")
 	}
 	if len(m.Texts) > 3 {
-		return "max allowed text count is 3"
+		return errors.New("max allowed text count is 3")
 	}
 	for _, t := range m.Texts {
-		if !validateLength(t) {
-			return "max allowed text length is 160"
+		if len(t) > 160 {
+			return errors.New("max allowed text length is 160")
 		}
 	}
-	return ""
-}
-
-func validateLength(t string) bool {
-	if len(t) > 160 {
-		return false
-	}
-	return true
+	return nil
 }
 
 func responseOK(w http.ResponseWriter, encoder *json.Encoder, response []string) {

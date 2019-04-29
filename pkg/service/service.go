@@ -44,36 +44,43 @@ func (s *SenderService) Format(ctx context.Context, phoneNumber string) (int64, 
 	data := url.Values{}
 	data.Set("msisdn", phoneNumber)
 	data.Set("countrycode", "AU")
+
 	req, err := s.request("POST", formatNumber, data.Encode())
 	if err != nil {
 		return 0, false, err
 	}
+
 	res, err := s.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return 0, false, errors.Wrap(err, "failed to format number")
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		s.logger.Error("Format number error", zap.Int("status code", res.StatusCode))
+	defer res.Body.Close()
+	var response Format
+	if res.StatusCode == http.StatusOK {
+		if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+			s.logger.Error("error", zap.Error(err))
+			return 0, false, fmt.Errorf("error decoding")
+		}
+		if response.Number.IsValid {
+			return response.Number.International, true, nil
+		}
 		return 0, false, nil
 	}
 
-	var response Format
+	s.logger.Error("Format number error", zap.Int("status code", res.StatusCode))
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		s.logger.Error("error", zap.Error(err))
 		return 0, false, fmt.Errorf("error decoding")
 	}
-	if response.Number.IsValid {
-		return response.Number.International, true, nil
-	}
+
 	s.logger.Error("Error code", zap.String("code", response.Error.Code))
 	s.logger.Error("Error description", zap.String("description", response.Error.Description))
 	return 0, false, nil
 
 }
 
-// Send sends sms message to the given number
+// Send transmit sms message to the given number
 // links are searched and replaced with short bitly links
 func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string) error {
 
@@ -93,12 +100,13 @@ func (s *SenderService) Send(ctx context.Context, phoneNumber int64, text string
 	if err != nil {
 		return errors.Wrap(err, "failed to send sms")
 	}
-	defer res.Body.Close()
 
+	defer res.Body.Close()
 	if res.StatusCode == http.StatusOK {
 		return nil
 	}
 
+	s.logger.Error("Send SMS error", zap.Int("status code", res.StatusCode))
 	var response Response
 	if err = json.NewDecoder(res.Body).Decode(&response); err != nil {
 		s.logger.Error("error", zap.Error(err))
@@ -117,12 +125,14 @@ func (s *SenderService) replaceLinks(text string) (string, error) {
 	for _, link := range links {
 		short, err := s.bitly.ShortURL(link)
 		if err != nil {
-			s.logger.Error("shorten-link-error", zap.Error(err))
+			s.logger.Error("shorten-link-error", zap.String("long-link", link), zap.Error(err))
 			return "", err
 		}
-		text = strings.Replace(text, link, short, -1)
+		if len(short) == 0 {
+			return "", fmt.Errorf("failed to shorten link %s", link)
+		}
+		text = strings.Replace(text, link, short, 1)
 	}
-	fmt.Println("replaced links", text)
 	return text, nil
 }
 
