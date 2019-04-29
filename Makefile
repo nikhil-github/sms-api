@@ -38,6 +38,9 @@ run-docker: build-docker
 stop-docker:
 	docker-compose stop
 
+stop-client-docker:
+	cd client && docker-compose stop
+
 run-client-docker:
 	cd client && docker-compose up -d --build &&  docker-compose logs -f
 
