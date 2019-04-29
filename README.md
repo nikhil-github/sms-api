@@ -21,7 +21,7 @@ Payload
 ```
 Success 
 
-```{status : {"0" : "success" ,"1" : "failure" , "2" : "success}}```
+```{status : {"success" , "failure" , "success}}```
 
 Failure
 
